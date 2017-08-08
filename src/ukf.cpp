@@ -120,8 +120,9 @@ void UKF::Prediction(double delta_t) {
   */
   MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
   MatrixXd A = P_.llt().matrixL();
+  lambda_ = 3 - n_x_;
   Xsig.col(0) = x_;
-  for (int i; i < n_x_; i++) {
+  for (int i = 0; i < n_x_; i++) {
     Xsig.col(i + 1) = x_ + sqrt(lambda_ + n_x_) * A.col(i);
     Xsig.col(i + 1 + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i);
   }
@@ -181,7 +182,7 @@ void UKF::Prediction(double delta_t) {
   }
   double weight_0 = lambda_ / (lambda_ + n_aug_);
   weights_(0) = weight_0;
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 1; i < 2 * n_aug_ + 1; i++) {
     double weight = 0.5 / (n_aug_ + lambda_);
     weights_(i) = weight;
   }
@@ -229,6 +230,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   }
   
   MatrixXd S = MatrixXd(n_z, n_z);
+  S.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
     S = S + weights_(i) * z_diff * z_diff.transpose();
