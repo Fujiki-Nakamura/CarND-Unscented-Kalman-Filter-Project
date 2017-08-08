@@ -83,8 +83,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         float rho = meas_package.raw_measurements_(0);
         float phi = meas_package.raw_measurements_(1);
         float rho_dot = meas_package.raw_measurements_(2);
+        float vx = rho_dot * cos(phi);
+        float vy = rho_dot * sin(phi);
+        float v  = sqrt(vx * vx + vy * vy);
         x_(0) = rho * cos(phi);
         x_(1) = rho * sin(phi);
+        x_(2) = sqrt(vx * vx + vy * vy);
       }
       is_initialized_ = true;
 
