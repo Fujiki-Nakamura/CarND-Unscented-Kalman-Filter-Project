@@ -20,9 +20,9 @@ UKF::UKF() {
   // initial covariance matrix
   P_ = MatrixXd(5, 5);
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 1.5;
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 0.55;
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
   // Laser measurement noise standard deviation position2 in m
