@@ -67,9 +67,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   if ((meas_package.sensor_type_ == MeasurementPackage::RADAR) ||
       (meas_package.sensor_type_ == MeasurementPackage::LASER)) {
     if (!is_initialized_) {
-      x_ << 1, 1, 1, 1, 0.1;
-      P_ << 0.1, 0, 0, 0, 0,
-            0, 0.1, 0, 0, 0,
+      x_ << 0, 0, 0, 0, 0;
+      P_ << 1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0,
             0, 0, 1, 0, 0,
             0, 0, 0, 1, 0,
             0, 0, 0, 0, 1;
