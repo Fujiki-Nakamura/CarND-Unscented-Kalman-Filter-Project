@@ -49,6 +49,10 @@ UKF::UKF() {
   NIS_radar_ = 0.0;
   weights_ = VectorXd(2 * n_aug_ + 1);
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
+
+  var_radr_ = std_radr_ * std_radr_;
+  var_radphi_ = std_radphi_ * std_radphi_;
+  var_radrd_ = std_radrd_ * std_radrd_;
 }
 
 UKF::~UKF() {}
@@ -299,9 +303,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   }
 
   MatrixXd R = MatrixXd(n_z, n_z);
-  R << std_radr_ * std_radr_, 0, 0,
-       0, std_radphi_ * std_radphi_, 0,
-       0, 0, std_radrd_ * std_radrd_;
+  R << var_radr_, 0, 0,
+       0, var_radphi_, 0,
+       0, 0, var_radrd_;
   S = S + R;
 
   MatrixXd Tc = MatrixXd(n_x_, n_z);
