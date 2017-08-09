@@ -178,12 +178,9 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_(4, i) = yawd_pred;
   }
 
-  double weight_0 = lambda_ / (lambda_ + n_aug_);
-  weights_(0) = weight_0;
-  for (int i = 1; i < 2 * n_aug_ + 1; i++) {
-    double weight = 0.5 / (n_aug_ + lambda_);
-    weights_(i) = weight;
-  }
+  weights_.fill(0.5 / (n_aug_ + lambda_))
+  weights_(0) = lambda_ / (lambda_ + n_aug_);
+
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     x_ = x_ + weights_(i) * Xsig_pred_.col(i); 
