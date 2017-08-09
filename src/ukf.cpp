@@ -47,12 +47,14 @@ UKF::UKF() {
   lambda_ = 3 - n_x_;
   NIS_laser_ = 0.0;
   NIS_radar_ = 0.0;
-  weights_ = VectorXd(2 * n_aug_ + 1);
-  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
+  _2_n_aug_plus_1 = 2 * n_aug_ + 1;
+  weights_ = VectorXd(_2_n_aug_plus_1);
+  Xsig_pred_ = MatrixXd(n_x_, _2_n_aug_plus_1);
 
   var_radr_ = std_radr_ * std_radr_;
   var_radphi_ = std_radphi_ * std_radphi_;
   var_radrd_ = std_radrd_ * std_radrd_;
+
 }
 
 UKF::~UKF() {}
@@ -129,7 +131,7 @@ void UKF::Prediction(double delta_t) {
 
   VectorXd x_aug = VectorXd(n_aug_);
   MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
-  MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+  MatrixXd Xsig_aug = MatrixXd(n_aug_,  _2_n_aug_plus_1);
   lambda_ = 3 - n_aug_;
   x_aug.head(5) = x_;
   x_aug(5) = 0.0;
@@ -146,7 +148,7 @@ void UKF::Prediction(double delta_t) {
     Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
   }
 
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     double p_x = Xsig_aug(0, i);
     double p_y = Xsig_aug(1, i);
     double v = Xsig_aug(2, i);
@@ -186,11 +188,11 @@ void UKF::Prediction(double delta_t) {
   weights_(0) = lambda_ / (lambda_ + n_aug_);
 
   x_.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     x_ = x_ + weights_(i) * Xsig_pred_.col(i); 
   }
   P_.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     while (x_diff(3) > M_PI) x_diff(3) -= 2. * M_PI;
     while (x_diff(3) < -M_PI) x_diff(3) += 2. * M_PI;
@@ -213,8 +215,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   */
   VectorXd z = meas_package.raw_measurements_;
   int n_z = 2;
-  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  MatrixXd Zsig = MatrixXd(n_z, _2_n_aug_plus_1);
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     double p_x = Xsig_pred_(0, i);
     double p_y = Xsig_pred_(1, i);
 
@@ -224,13 +226,13 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   
   VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
   
   MatrixXd S = MatrixXd(n_z, n_z);
   S.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
@@ -242,7 +244,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   MatrixXd Tc = MatrixXd(n_x_, n_z);
   Tc.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
@@ -271,9 +273,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   */
   VectorXd z = meas_package.raw_measurements_;
   int n_z = 3;
-  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
+  MatrixXd Zsig = MatrixXd(n_z, _2_n_aug_plus_1);
 
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     double p_x = Xsig_pred_(0, i);
     double p_y = Xsig_pred_(1, i);
     double v = Xsig_pred_(2, i);
@@ -289,13 +291,13 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
   MatrixXd S = MatrixXd(n_z, n_z);
   S.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
     while (z_diff(1) > M_PI) z_diff(1) -= 2. * M_PI;
     while (z_diff(1) < -M_PI) z_diff(1) += 2. * M_PI;
@@ -310,7 +312,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   MatrixXd Tc = MatrixXd(n_x_, n_z);
   Tc.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+  for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd z_diff = Zsig.col(i) - z_pred;
     while (z_diff(1) > M_PI) z_diff(1) -= 2. * M_PI;
     while (z_diff(1) < -M_PI) z_diff(1) += 2. * M_PI;
