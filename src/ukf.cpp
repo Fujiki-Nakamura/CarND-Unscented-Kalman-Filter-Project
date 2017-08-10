@@ -253,7 +253,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   }
 
   MatrixXd K = Tc * S.inverse();
-  VectorXd z_diff = z_pred - z;
+  VectorXd z_diff = z - z_pred;
   NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
 
   x_ = x_ + K * z_diff;
