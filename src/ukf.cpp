@@ -124,9 +124,10 @@ void UKF::Prediction(double delta_t) {
   MatrixXd A = P_.llt().matrixL();
   lambda_ = 3 - n_x_;
   Xsig.col(0) = x_;
+  double sqrt_lambda_n_x = sqrt(lambda_ + n_x_);
   for (int i = 0; i < n_x_; i++) {
-    Xsig.col(i + 1) = x_ + sqrt(lambda_ + n_x_) * A.col(i);
-    Xsig.col(i + 1 + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i);
+    Xsig.col(i + 1) = x_ + sqrt_lambda_n_x * A.col(i);
+    Xsig.col(i + 1 + n_x_) = x_ - sqrt_lambda_n_x * A.col(i);
   }
 
   VectorXd x_aug = VectorXd(n_aug_);
@@ -143,19 +144,20 @@ void UKF::Prediction(double delta_t) {
   P_aug(6, 6) = std_yawdd_ * std_yawdd_;
   MatrixXd L = P_aug.llt().matrixL();
   Xsig_aug.col(0) = x_aug;
+  double sqrt_lambda_n_aug = sqrt(lambda_ + n_aug_);
   for (int i = 0; i < n_aug_; i++) {
-    Xsig_aug.col(i + 1) = x_aug + sqrt(lambda_ + n_aug_) * L.col(i);
-    Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
+    Xsig_aug.col(i + 1) = x_aug + sqrt_lambda_n_aug * L.col(i);
+    Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt_lambda_n_aug * L.col(i);
   }
 
   for (int i = 0; i < _2_n_aug_plus_1; i++) {
-    double p_x = Xsig_aug(0, i);
-    double p_y = Xsig_aug(1, i);
-    double v = Xsig_aug(2, i);
-    double yaw = Xsig_aug(3, i);
-    double yawd = Xsig_aug(4, i);
-    double nu_a = Xsig_aug(5, i);
-    double nu_yawdd = Xsig_aug(6, i);
+    const double p_x = Xsig_aug(0, i);
+    const double p_y = Xsig_aug(1, i);
+    const double v = Xsig_aug(2, i);
+    const double yaw = Xsig_aug(3, i);
+    const double yawd = Xsig_aug(4, i);
+    const double nu_a = Xsig_aug(5, i);
+    const double nu_yawdd = Xsig_aug(6, i);
     double px_pred, py_pred;
 
     if (fabs(yawd) > 0.001) {
@@ -184,8 +186,9 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_(4, i) = yawd_pred;
   }
 
-  weights_.fill(0.5 / (n_aug_ + lambda_));
-  weights_(0) = lambda_ / (lambda_ + n_aug_);
+  int n_aug_plus_lambda = n_aug_ + lambda_;
+  weights_.fill(0.5 / n_aug_plus_lambda);
+  weights_(0) = lambda_ / n_aug_plus_lambda;
 
   x_.fill(0.0);
   for (int i = 0; i < _2_n_aug_plus_1; i++) {
@@ -194,8 +197,7 @@ void UKF::Prediction(double delta_t) {
   P_.fill(0.0);
   for (int i = 0; i < _2_n_aug_plus_1; i++) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
-    while (x_diff(3) > M_PI) x_diff(3) -= 2. * M_PI;
-    while (x_diff(3) < -M_PI) x_diff(3) += 2. * M_PI;
+    NormalizeAngle(x_diff(3));
     P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
   }
 }
@@ -331,4 +333,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   NIS_radar_ = z_diff.transpose() * S.inverse() * z_diff;
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
+}
+
+void UKF::NormalizeAngle(double& phi) {
+    phi = atan2(sin(phi), cos(phi));
 }
